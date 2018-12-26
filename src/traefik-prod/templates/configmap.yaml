@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "traefik-prod.fullname" . }}
+  namespace: prod
+  labels:
+    app: {{ template "traefik-prod.name" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+data:
+  traefik.toml: |
+    debug = false
+    logLevel = "INFO"
+    AllowMinWeightZero = false
+    [traefikLog]
+      filePath = "mylogs/traefik.log"
+      format   = "json"
+    [accessLog]
+      filePath = "mylogs/access.log"
+      format = "json"
+    defaultEntryPoints = ["http", "https"]
+    [entryPoints]
+      [entryPoints.http]
+      address = ":8080"
+      [entryPoints.traefik]
+      address = ":8081"
+      [entryPoints.https]
+        address = ":8443"
+        [entryPoints.https.tls]
+          [[entryPoints.https.ssl.certificates]]
+          certFile = "mydata/shannon.csr"
+          keyFile = "mydata/shannon.key"
+    [api]
+      entryPoint = "traefik"
+      dashboard = true
+

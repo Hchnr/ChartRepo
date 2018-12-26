@@ -1,0 +1,134 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: simplehttpserver
+  namespace: prod
+spec:
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: simplehttpserver
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: simplehttpserver
+  namespace: prod
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: simplehttpserver.shannonai.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: simplehttpserver
+          servicePort: 8080
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: {{ include "simplehttpserver.fullname" . }}
+  namespace: prod
+  annotations:
+    kubernetes.io/change-cause: "initial deployment"
+  labels:
+    app: simplehttpserver
+    app.kubernetes.io/name: {{ include "simplehttpserver.name" . }}
+    helm.sh/chart: {{ include "simplehttpserver.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  minReadySeconds: 5
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: simplehttpserver
+      app.kubernetes.io/name: {{ include "simplehttpserver.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: simplehttpserver
+        app.kubernetes.io/name: {{ include "simplehttpserver.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      name: simplehttpserver
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - simplehttpserver
+              topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 60
+      imagePullSecrets:
+      - name: aliyun-kubernetes
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - name: web
+          containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10 ## equals to the maximum startup time of the application + couple of seconds
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        readinessProbe: #kubernetes认为该pod是启动成功的
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10 ## equals to minimum startup time of the application
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        env:
+        - name: KEY
+          value: "VALUE"
+        volumeMounts:
+        - mountPath: /mount-data
+          name: data-volume
+      initContainers:
+      - name: init-container
+        image: registry.cn-beijing.aliyuncs.com/shannonai/kube_init:v1.0.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /home/work/data
+          name: data-volume
+        args:
+        - init
+        - ftp://ftp.shannonai.com/deployment/simplehttpserver/fd939de92dde812ed8100e792925c4e84d850e0d/
+      volumes:
+      - name: data-volume
+        emptyDir: {}
+

@@ -1,0 +1,92 @@
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: {{ include "traefik-prod.fullname" . }}
+  namespace: prod
+  annotations:
+      kubernetes.io/change-cause: "initial deployment"
+  labels:
+    app: traefik-prod
+    app.kubernetes.io/name: {{ include "traefik-prod.name" . }}
+    helm.sh/chart: {{ include "traefik-prod.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: traefik-prod
+      app.kubernetes.io/name: {{ include "traefik-prod.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: traefik-prod
+        app.kubernetes.io/name: {{ include "traefik-prod.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      nodeSelector:
+        location: entrance
+      serviceAccountName: traefik-prod
+      terminationGracePeriodSeconds: 60
+      imagePullSecrets:
+      - name: aliyun-shannon
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            cpu: 800m
+            memory: 2Gi
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: https
+          containerPort: 8443
+        - name: admin
+          containerPort: 8081
+        args:
+        - traefik
+        - --api
+        - --kubernetes
+        - --defaultentrypoints=http,https
+        - --configfile=/home/work/conf/traefik.toml
+        volumeMounts:
+        - mountPath: /home/work/conf
+          name: conf-volume
+        - mountPath: /home/work/data
+          name: data-volume
+        - mountPath: /home/work/logs
+          name: logs-volume
+        - mountPath: /home/work/myconf
+          name: myconf-volume
+      initContainers:
+      - name: init-container
+        image: registry.cn-beijing.aliyuncs.com/shannonai/kube_init:v1.0.0
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /home/work/data
+          name: data-volume
+        - mountPath: /home/work/conf
+          name: conf-volume
+        - mountPath: /home/work/logs
+          name: logs-volume
+        args:
+        - init
+        - {{ .Values.config.deploymentUrl }} 
+      volumes:
+      - name: conf-volume
+        emptyDir: {}
+      - name: data-volume
+        emptyDir: {}
+      - name: logs-volume
+        emptyDir: {}
+      - name: myconf-volume
+        configMap:
+          name: {{ template "traefik-prod.fullname" . }}
+
+

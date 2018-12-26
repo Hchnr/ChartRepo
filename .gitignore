@@ -1,0 +1,7 @@
+logs
+logs/*
+release
+release/*
+file_server
+data
+data/*

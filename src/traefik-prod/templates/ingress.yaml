@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: traefik-prod-monitor
+  namespace: prod
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: traefik-prod.shannonai.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: traefik-prod-monitor
+          servicePort: 8081
+

@@ -1,0 +1,114 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ include "kbqa-mysql.fullname" . }}
+  namespace: prod
+  annotations:
+      kubernetes.io/change-cause: "use data {{ .Values.initContainer.dataArg }}"
+  labels:
+    app: kbqa-mysql
+    app.kubernetes.io/name: {{ include "kbqa-mysql.name" . }}
+    helm.sh/chart: {{ include "kbqa-mysql.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  minReadySeconds: 120
+  progressDeadlineSeconds: 3600
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: kbqa-mysql
+      app.kubernetes.io/name: {{ include "kbqa-mysql.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: kbqa-mysql
+        app.kubernetes.io/name: {{ include "kbqa-mysql.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      name: kbqa-mysql
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - kbqa-mysql
+              topologyKey: kubernetes.io/hostname
+      terminationGracePeriodSeconds: 60
+      imagePullSecrets:
+      - name: aliyun-kubernetes
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+          limits:
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+        ports:
+        - name: mysql
+          containerPort: 3306
+        livenessProbe:
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 30 ## equals to the maximum startup time of the application + couple of seconds
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        readinessProbe: #kubernetes认为该pod是启动成功的
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 30 ## equals to minimum startup time of the application
+          periodSeconds: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 5
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: shannon
+        volumeMounts:
+        - mountPath: /home/work/data
+          name: data-volume
+        - mountPath: /home/work/conf
+          name: conf-volume
+        - mountPath: /home/work/logs
+          name: logs-volume
+      initContainers:
+      - name: init-container
+        # image: registry.cn-beijing.aliyuncs.com/shannonai/init:1.0.0
+        image: "{{ .Values.initContainer.repository }}:{{ .Values.initContainer.tag }}"
+        imagePullPolicy: {{ .Values.initContainer.pullPolicy }}
+        volumeMounts:
+        - mountPath: /home/work/data
+          name: data-volume
+        - mountPath: /home/work/conf
+          name: conf-volume
+        - mountPath: /home/work/logs
+          name: logs-volume
+        args:
+        - init
+        - {{ .Values.initContainer.dataArg }}
+      volumes:
+      - name: data-volume
+        emptyDir: {}
+      - name: conf-volume
+        emptyDir: {}
+      - name: logs-volume
+        emptyDir: {}
+

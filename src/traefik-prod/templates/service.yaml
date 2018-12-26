@@ -1,0 +1,44 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "traefik-prod.fullname" . }}
+  namespace: prod
+  labels:
+    app.kubernetes.io/name: {{ include "traefik-prod.name" . }}
+    helm.sh/chart: {{ include "traefik-prod.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  selector:
+    app: traefik-prod
+    app.kubernetes.io/name: {{ include "traefik-prod.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - protocol: TCP
+      targetPort: 8080
+      port: 80
+      nodePort: 80
+      name: http
+    - protocol: TCP
+      targetPort: 8443
+      port: 443
+      nodePort: 443
+      name: https
+  type: NodePort
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: traefik-prod-monitor
+  namespace: prod
+spec:
+  selector:
+    app: traefik-prod
+    app.kubernetes.io/name: {{ include "traefik-prod.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+      name: admin
+

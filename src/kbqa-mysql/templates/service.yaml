@@ -1,0 +1,24 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ include "kbqa-mysql.fullname" . }}
+  namespace: prod
+  labels:
+    app.kubernetes.io/name: {{ include "kbqa-mysql.name" . }}
+    helm.sh/chart: {{ include "kbqa-mysql.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  clusterIP: None
+  ports:
+  - protocol: TCP
+    name: mysql
+    port: {{ .Values.service.port }}
+    targetPort: 3306
+  selector:
+    app: kbqa-mysql
+    app.kubernetes.io/name: {{ include "kbqa-mysql.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+
