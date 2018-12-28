@@ -21,7 +21,7 @@ wget ftp://ftp.shannonai.com/tmp/images/helm-v2.11.0-linux-amd64.tar.gz
 tar -zxvf helm-v2.11.0-linux-amd64.tar.gz
 cp linux-amd64/helm /usr/local/bin/helm
 git clone git@github.com:jiweil/chart-server.git
-repo_dir=$base_dir/tmp/ChartRepo
+repo_dir=$base_dir/tmp/chart-server
 
 # *******************************************
 # TAR chart => .tgz to release
