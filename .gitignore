@@ -5,3 +5,4 @@ release/*
 file_server
 data
 data/*
+tmp
