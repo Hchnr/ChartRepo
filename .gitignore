@@ -6,3 +6,4 @@ file_server
 data
 data/*
 tmp
+tmp/*
