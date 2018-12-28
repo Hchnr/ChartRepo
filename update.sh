@@ -20,7 +20,7 @@ mkdir -p $base_dir/tmp; cd $base_dir/tmp
 wget ftp://ftp.shannonai.com/tmp/images/helm-v2.11.0-linux-amd64.tar.gz
 tar -zxvf helm-v2.11.0-linux-amd64.tar.gz
 cp linux-amd64/helm /usr/local/bin/helm
-git clone git@github.com:jiweil/chart-server.git
+git clone git@github.com:Hchnr/ChartRepo.git 
 repo_dir=$base_dir/tmp/CustomChartServer
 
 # *******************************************

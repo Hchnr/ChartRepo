@@ -7,3 +7,5 @@ data
 data/*
 tmp
 tmp/*
+ssh
+ssh/*

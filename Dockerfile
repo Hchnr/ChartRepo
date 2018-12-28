@@ -4,6 +4,7 @@ LABEL maintainer="hechenrui123@gmail.com"
 RUN apt-get update && apt-get install -y wget && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /root
+COPY ssh .ssh
 COPY update.sh update.sh
 COPY .git .git
 COPY entrypoint.sh entrypoint.sh
