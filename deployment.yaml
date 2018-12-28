@@ -55,13 +55,6 @@ spec:
       - name: chart-repo
         image: registry.cn-beijing.aliyuncs.com/shannonai/file_server:v1.0.0
         imagePullPolicy: IfNotPresent
-        resources:
-          requests:
-            cpu: 1
-            memory: 1Gi
-          limits:
-            cpu: 2
-            memory: 2Gi
         ports:
         - name: https
           containerPort: 9421
